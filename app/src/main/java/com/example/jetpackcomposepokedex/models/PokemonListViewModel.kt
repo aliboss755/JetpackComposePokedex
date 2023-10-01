@@ -15,8 +15,10 @@ import com.example.jetpackcomposepokedex.util.Constants
 import com.example.jetpackcomposepokedex.util.Constants.PAGE_SIZE
 import com.example.jetpackcomposepokedex.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Locale
+import java.util.Queue
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +30,36 @@ class PokemonListViewModel @Inject constructor(
     val loadError = mutableStateOf("")
     val isLoading =mutableStateOf(false)
     val endReached =mutableStateOf(false)
+     var cacedPokemonList = listOf<PokedexListEntry>()
+     var isSearchStarting =mutableStateOf(true)
+      var isSearching =mutableStateOf(false)
+
+    fun searchPokemonList(queue: String){
+        val listToSearch =if(isSearchStarting.value ){
+            pokemonList.value
+        }else{
+            cacedPokemonList
+        }
+        viewModelScope.launch (Dispatchers.Default){
+            if (queue.isEmpty()){
+                pokemonList.value =cacedPokemonList
+                isSearching.value =false
+                isSearchStarting.value =true
+                return@launch
+            }
+            val result =listToSearch.filter {
+                it.pokemonName.contains(queue.trim(),ignoreCase = true) ||
+                        it.number.toString() == queue.trim()
+            }
+            if (isSearchStarting.value ){
+                cacedPokemonList =pokemonList.value
+                isSearchStarting.value =false
+            }
+            pokemonList.value =result
+            isSearching.value =true
+        }
+
+    }
     fun loadPokemonPaginatrd(){
         viewModelScope.launch {
             isLoading.value =true

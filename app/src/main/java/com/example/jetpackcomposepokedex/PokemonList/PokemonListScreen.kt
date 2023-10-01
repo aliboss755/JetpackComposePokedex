@@ -58,7 +58,8 @@ import com.google.accompanist.coil.CoilImage
 
 @Composable
 fun PokemonListScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: PokemonListViewModel = hiltViewModel()
 ) {
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -79,7 +80,7 @@ fun PokemonListScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-
+                viewModel.searchPokemonList(it)
             }
             Spacer(modifier = Modifier.height(16.dp))
             PokemonList(navController = navController)
@@ -116,7 +117,7 @@ fun SearchBar(
                 .background(Color.White, CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .onFocusChanged {
-                    isHintDisplayd = it.isFocused
+                    isHintDisplayd = it.isFocused && text.isNotEmpty()
 
                 }
         )
@@ -148,6 +149,9 @@ fun PokemonList (
     val isLoading by remember {
         viewModel.isLoading
     }
+    val isSearching by remember {
+        viewModel.isSearching
+    }
     LazyColumn(contentPadding = PaddingValues(16.dp)){
         val itemCount = if (pokemonList.size %2 ==0){
             pokemonList.size /2
@@ -155,7 +159,7 @@ fun PokemonList (
             pokemonList.size /2 +1
         }
         items(itemCount){
-            if (it >= itemCount -1 && !endReached){
+            if (it >= itemCount -1 && !endReached && !isLoading && !isSearching){
                 viewModel.loadPokemonPaginatrd()
             }
             PokedexRow(rowIndex = it, entries = pokemonList, navController = navController)
@@ -180,6 +184,9 @@ fun PokemonList (
 
     
 }
+
+
+
 @Composable
 fun PokedexEntry(
     entry: PokedexListEntry,
